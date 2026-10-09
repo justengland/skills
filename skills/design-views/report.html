@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Design Views</title>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "dark" });
+  window.__mermaid = mermaid;
+</script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #14161a; --panel: #1c1f25; --ink: #e8e6e1; --muted: #9aa0a9; --line: #343842;
+  --accent: #818cf8; --bad: #f87171; --warn: #fbbf24; --ok: #34d399; --spec: #94a3b8;
+  --edge: #5b616b; --human: #2dd4bf; --agent: #a78bfa; --system: #60a5fa;
+  --box: #1e2433; --unit: #2d261b; --mod: #1d2a20;
+  --r0: #1d2a20; --r1: #1e2433; --r2: #2d261b; --r3: #2f1f24;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+.topnav {
+  position: sticky; top: 0; z-index: 20; background: var(--panel); border-bottom: 1px solid var(--line);
+  padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+}
+.topnav .brand { font: 600 15px/1 Georgia, serif; margin-right: 8px; }
+.topnav .nav { display: flex; flex-wrap: wrap; gap: 4px; }
+.topnav a, .topnav button.navtab {
+  border: 1px solid transparent; background: none; color: var(--muted); padding: 5px 10px;
+  border-radius: 6px; cursor: pointer; font: inherit; text-decoration: none;
+}
+.topnav a:hover, .topnav button.navtab:hover { color: var(--ink); background: var(--bg); }
+.topnav button.navtab.on { color: var(--ink); font-weight: 600; background: var(--bg); border-color: var(--line); }
+.topnav button.navtab.missing { opacity: .45; }
+.topnav .skills { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.topnav .skills a { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); }
+main { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font: 600 26px/1.2 Georgia, serif; margin: 0; }
+h2 { font: 600 13px/1 ui-sans-serif, system-ui; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+.sub { color: var(--muted); margin-top: 4px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; background: var(--panel); color: var(--ink); }
+.chip b { font-weight: 600; }
+.chip.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.chip.human { border-color: var(--human); color: var(--human); }
+.chip.agent { border-color: var(--agent); color: var(--agent); }
+.chip.system { border-color: var(--system); color: var(--system); }
+.chip.strong { border-color: var(--bad); color: var(--bad); }
+.chip.worth { border-color: var(--warn); color: var(--warn); }
+.chip.speculative { border-color: var(--spec); color: var(--spec); }
+.chip.clean { border-color: var(--ok); color: var(--ok); }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; margin-top: 16px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.stage { min-height: 420px; background: var(--bg); border-radius: 8px; position: relative; }
+svg.canvas { width: 100%; height: auto; display: block; }
+svg text { fill: var(--ink); font-size: 11px; }
+.node { cursor: pointer; }
+.node rect, .node circle { stroke: var(--panel); stroke-width: 2; }
+.dim { opacity: .15; }
+.edge { fill: none; stroke: var(--edge); stroke-width: 1.3; }
+.edge.out { stroke: var(--bad); stroke-width: 2.2; }
+.edge.cyc { stroke: var(--warn); stroke-dasharray: 5 3; stroke-width: 2; }
+.edge.bi { stroke: var(--bad); stroke-width: 2; }
+.edge.hi { stroke: var(--accent); stroke-width: 2.4; }
+.legend { font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 4px; }
+.detail h3 { margin: 0 0 4px; font: 600 18px/1.25 Georgia, serif; }
+.detail dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0; font-size: 13px; }
+.detail dt { color: var(--muted); }
+.detail ul { margin: 4px 0 10px; padding-left: 18px; }
+.mono, code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; overflow-x: auto; margin: 4px 0; white-space: pre-wrap; }
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ba div > span { font-size: 11px; text-transform: uppercase; color: var(--muted); }
+.findings { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.finding { cursor: pointer; }
+.finding.on { outline: 2px solid var(--accent); }
+.finding h4 { margin: 6px 0 4px; font-size: 14px; }
+.finding p { margin: 0; color: var(--muted); font-size: 13px; }
+.badge { font-size: 11px; padding: 1px 7px; border-radius: 4px; border: 1px solid; }
+.badge.strong { color: var(--bad); } .badge.worth { color: var(--warn); } .badge.speculative { color: var(--spec); }
+.badge.measured { color: var(--accent); }
+.hint { color: var(--muted); font-size: 13px; }
+a { color: var(--accent); cursor: pointer; }
+#mermaidHost { padding: 12px; overflow: hidden; }
+#mermaidHost pre.mermaid { overflow: hidden; margin: 0; }
+svg.pz { cursor: grab; touch-action: none; }
+svg.pz.panning { cursor: grabbing; }
+svg#canvas [data-node] { cursor: move; }
+#mermaidHost .empty { padding: 48px 24px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<nav class="topnav" id="topnav"></nav>
+<main>
+  <header>
+    <h1 id="title"></h1>
+    <div class="sub" id="subtitle"></div>
+  </header>
+
+  <section class="panel" style="margin-top:16px" id="metaPanel">
+    <h2>Actors</h2>
+    <div class="row" id="actors"></div>
+    <h2 style="margin-top:14px">Principles: click to filter</h2>
+    <div class="row" id="scorecard"></div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="stage">
+        <svg class="canvas" id="canvas" viewBox="0 0 900 560"></svg>
+        <div id="mermaidHost" style="display:none"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+    <aside class="panel detail" id="detail"></aside>
+  </div>
+
+  <section>
+    <h2 style="margin-top:20px" id="findingsTitle">Findings</h2>
+    <div class="findings" id="findings"></div>
+  </section>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+
+const ALL = ["logical", "physical", "application", "rings", "class"];
+const LABELS = { logical: "Logical", physical: "Physical", application: "Application", rings: "Rings", class: "Class" };
+const RING_NAMES = ["Entities", "Use cases", "Interface adapters", "Frameworks & drivers"];
+const PRINCIPLES = {
+  FLOW: ["logical", "Flow", "Collaborations the product depends on are on the map; actors split by job."],
+  ORPHAN: ["logical", "Orphan", "Every box has actors; every actor sits on a box."],
+  LEAK: ["logical", "Leak", "Logical edges are collaboration, not packaging or imports."],
+  HAND: ["shared", "Hand off", "Ring/DEP questions → clean-code; class PNG export → plantuml."],
+  PACK: ["physical", "Pack", "Things that deploy apart get separate units."],
+  SCATTER: ["physical", "Scatter", "One responsibility has one containing unit."],
+  GHOST: ["physical", "Ghost", "Every unit has real paths."],
+  HUB: ["application", "Hub", "Grab-bags that everyone imports for one helper."],
+  SKIP: ["application", "Skip", "Callers use the façade, not a leaf detail."],
+  MIX: ["application", "Mix", "One module answers to one change reason."],
+  CYCLE: ["application", "Cycle", "No cycles in the module graph."],
+  FAN: ["application", "Fan", "Fan-in/out imbalance worth noticing."],
+  BI: ["application", "Bidirectional", "Mutual imports couple two modules."],
+  DEP: ["rings", "Dependency Rule", "Source dependencies point inward only."],
+  TYPE: ["class", "Type", "Named types and their relations match the code."],
+};
+const RANK = { strong: 3, worth: 2, speculative: 1 };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const views = DATA.views || [];
+const links = DATA.links || {};
+const actors = Object.fromEntries((DATA.actors || []).map((a) => [a.id, a]));
+
+function hasData(v) {
+  if (v === "logical") return !!DATA.logical?.boxes?.length;
+  if (v === "physical") return !!DATA.physical?.units?.length;
+  if (v === "application") return !!DATA.application?.modules?.length;
+  if (v === "rings") return !!DATA.rings?.components?.length;
+  if (v === "class") return !!(DATA.class?.mermaid || DATA.class?.image);
+  return false;
+}
+
+function graph(v) {
+  if (v === "logical") return { nodes: DATA.logical?.boxes || [], edges: DATA.logical?.edges || [], fill: "var(--box)" };
+  if (v === "physical") return { nodes: DATA.physical?.units || [], edges: DATA.physical?.edges || [], fill: "var(--unit)" };
+  if (v === "application") return { nodes: DATA.application?.modules || [], edges: DATA.application?.edges || [], fill: "var(--mod)" };
+  if (v === "rings") return { nodes: DATA.rings?.components || [], edges: DATA.rings?.edges || [], fill: "var(--r1)" };
+  return { nodes: [], edges: [], fill: "var(--box)" };
+}
+
+function measureApp() {
+  const measured = [];
+  if (!views.includes("application") || !DATA.application) return measured;
+  const mods = DATA.application.modules;
+  const byId = Object.fromEntries(mods.map((m) => [m.id, m]));
+  const edges = DATA.application.edges.filter((e) => e.from !== e.to);
+  const out = {}, inn = {};
+  mods.forEach((m) => { out[m.id] = new Set(); inn[m.id] = new Set(); });
+  edges.forEach((e) => { out[e.from].add(e.to); inn[e.to].add(e.from); });
+  mods.forEach((m) => { m.fanIn = inn[m.id].size; m.fanOut = out[m.id].size; });
+
+  const sccOf = {}; const sccs = [];
+  {
+    let idx = 0; const index = {}, low = {}, stack = [], on = new Set();
+    const visit = (v) => {
+      index[v] = low[v] = idx++; stack.push(v); on.add(v);
+      for (const w of out[v]) {
+        if (index[w] === undefined) { visit(w); low[v] = Math.min(low[v], low[w]); }
+        else if (on.has(w)) low[v] = Math.min(low[v], index[w]);
+      }
+      if (low[v] === index[v]) {
+        const s = []; let w;
+        do { w = stack.pop(); on.delete(w); s.push(w); } while (w !== v);
+        if (s.length > 1) { sccs.push(s); s.forEach((x) => (sccOf[x] = sccs.length - 1)); }
+      }
+    };
+    mods.forEach((m) => index[m.id] === undefined && visit(m.id));
+  }
+  edges.forEach((e) => {
+    e.cycle = sccOf[e.from] !== undefined && sccOf[e.from] === sccOf[e.to];
+    e.bi = out[e.to]?.has(e.from);
+  });
+  sccs.forEach((s, i) => measured.push({
+    id: `m-cycle-${i}`, view: "application", principle: "CYCLE", strength: "strong", measured: true, modules: s,
+    title: `Cycle: ${s.map((x) => byId[x].name).join(" ↔ ")}`,
+    problem: `${s.length} modules reach each other; none can change alone.`,
+    fix: "Break one edge: move the shared piece, or invert with an interface.",
+  }));
+  const seenBi = new Set();
+  edges.filter((e) => e.bi).forEach((e, i) => {
+    const k = [e.from, e.to].sort().join("|");
+    if (seenBi.has(k)) return;
+    seenBi.add(k);
+    measured.push({
+      id: `m-bi-${i}`, view: "application", principle: "BI", strength: "worth", measured: true, modules: [e.from, e.to],
+      title: `${byId[e.from].name} ↔ ${byId[e.to].name} import each other`,
+      problem: "Bidirectional imports couple two modules into one release granule.",
+      fix: "Pull the shared type into a third module, or make one edge go through an interface.",
+    });
+  });
+  const n = mods.length || 1;
+  mods.forEach((m) => {
+    if (m.fanIn >= Math.max(3, Math.ceil(n * 0.4)) && m.fanOut <= 1) measured.push({
+      id: `m-fan-${m.id}`, view: "application", principle: "FAN", strength: "worth", measured: true, modules: [m.id],
+      title: `${m.name} is a high fan-in hub`,
+      problem: `fan-in ${m.fanIn}, fan-out ${m.fanOut}. Many depend on it; check it is not a grab-bag.`,
+      fix: "If callers each use a thin slice, split; if they share one concept, keep it.",
+    });
+    if (m.fanOut >= Math.max(4, Math.ceil(n * 0.5))) measured.push({
+      id: `m-fanout-${m.id}`, view: "application", principle: "FAN", strength: "speculative", measured: true, modules: [m.id],
+      title: `${m.name} fans out widely`,
+      problem: `fan-out ${m.fanOut}. It may be a composition root or a mess.`,
+      fix: "Composition roots are fine; if it is mid-layer, shrink what it reaches.",
+    });
+  });
+  DATA.application._meta = { out, inn, edges, byId };
+  return measured;
+}
+
+function measureRings() {
+  const measured = [];
+  if (!views.includes("rings") || !DATA.rings) return measured;
+  const comps = DATA.rings.components;
+  const byId = Object.fromEntries(comps.map((c) => [c.id, c]));
+  const edges = (DATA.rings.edges || []).filter((e) => e.from !== e.to);
+  edges.forEach((e, i) => {
+    const a = byId[e.from], b = byId[e.to];
+    if (!a || !b) return;
+    e.outward = a.ring <= 1 && a.ring < b.ring;
+    if (e.outward) measured.push({
+      id: `m-dep-${i}`, view: "rings", principle: "DEP", strength: "strong", measured: true, components: [e.from, e.to],
+      title: `${a.name} depends outward on ${b.name}`,
+      problem: `${RING_NAMES[a.ring]} → ${RING_NAMES[b.ring]}. ${e.note || ""}`,
+      fix: "Run clean-code for the full audit, or declare the interface on the inner side.",
+    });
+  });
+  DATA.rings._meta = { edges, byId };
+  return measured;
+}
+
+const measured = [...measureApp(), ...measureRings()];
+const findings = [...(DATA.findings || []), ...measured].sort((a, b) => RANK[b.strength] - RANK[a.strength]);
+const fById = Object.fromEntries(findings.map((f) => [f.id, f]));
+
+function touched(f) {
+  return f.boxes || f.units || f.modules || f.components || f.types || [];
+}
+
+function layoutCircle(nodes) {
+  const pos = {};
+  const cx = 450, cy = 280, rad = Math.min(220, 40 + nodes.length * 18);
+  nodes.forEach((n, i) => {
+    const t = -Math.PI / 2 + (2 * Math.PI * i) / Math.max(nodes.length, 1);
+    pos[n.id] = [cx + rad * Math.cos(t), cy + rad * Math.sin(t), t];
+  });
+  if (nodes.length === 1) pos[nodes[0].id] = [cx, cy, 0];
+  return pos;
+}
+
+function layoutRings(comps) {
+  const pos = {};
+  const C = 380, BAND = 90;
+  [0, 1, 2, 3].forEach((r) => {
+    const list = comps.filter((c) => c.ring === r).sort((a, b) => a.id.localeCompare(b.id));
+    const rad = r === 0 && list.length === 1 ? 0 : r * BAND + BAND / 2;
+    list.forEach((c, i) => {
+      const t = -Math.PI / 2 + r * 0.45 + (2 * Math.PI * i) / Math.max(list.length, 1);
+      pos[c.id] = [C + rad * Math.cos(t), C + rad * Math.sin(t), t];
+    });
+  });
+  return pos;
+}
+
+function curve(pos, a, b, ra, rb, bend) {
+  const [x1, y1] = pos[a], [x2, y2] = pos[b];
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+  const sx = x1 + (dx / len) * ra, sy = y1 + (dy / len) * ra;
+  const ex = x2 - (dx / len) * (rb + 4), ey = y2 - (dy / len) * (rb + 4);
+  const mx = (sx + ex) / 2 - (dy / len) * bend, my = (sy + ey) / 2 + (dx / len) * bend;
+  return `M${sx},${sy} Q${mx},${my} ${ex},${ey}`;
+}
+
+let view = views.find(hasData) || views[0] || "logical";
+let sel = null;
+
+function focusIds() {
+  if (!sel) return null;
+  if (sel.type === "node") {
+    const g = graph(view);
+    const outs = g.edges.filter((e) => e.from === sel.id || e.to === sel.id).flatMap((e) => [e.from, e.to]);
+    return new Set([sel.id, ...outs]);
+  }
+  if (sel.type === "finding") return new Set(touched(fById[sel.id]));
+  if (sel.type === "principle") return new Set(findings.filter((f) => f.principle === sel.id).flatMap(touched));
+  if (sel.type === "actor") {
+    return new Set((DATA.logical?.boxes || []).filter((b) => b.actors?.includes(sel.id)).map((b) => b.id));
+  }
+  return null;
+}
+
+function select(s) {
+  sel = s && sel && s.type === sel.type && s.id === sel.id ? null : s;
+  render();
+}
+
+function drawTopnav() {
+  const skills = [];
+  if (links["clean-code"]) skills.push(`<a href="${esc(links["clean-code"])}" title="Open clean-code report">clean-code</a>`);
+  else skills.push(`<a href="#" data-skill="clean-code" title="Full Clean Architecture audit">clean-code</a>`);
+  if (links.plantuml) skills.push(`<a href="${esc(links.plantuml)}" title="Open plantuml output">plantuml</a>`);
+  else skills.push(`<a href="#" data-skill="plantuml" title="PNG/SVG class export via plantuml">plantuml</a>`);
+
+  $("topnav").innerHTML = `
+    <span class="brand">${esc(DATA.repo || "design-views")}</span>
+    <div class="nav">${ALL.map((v) => {
+      const on = v === view;
+      const miss = !hasData(v) && !links[v];
+      const href = links[v] && !hasData(v) ? `href="${esc(links[v])}"` : "";
+      if (href) return `<a class="navtab ${on ? "on" : ""} ${miss ? "missing" : ""}" ${href}>${LABELS[v]}</a>`;
+      return `<button class="navtab ${on ? "on" : ""} ${miss ? "missing" : ""}" data-view="${v}" title="${miss ? "No data yet — choose this view on the next map" : LABELS[v]}">${LABELS[v]}</button>`;
+    }).join("")}</div>
+    <div class="skills">${skills.join("")}</div>`;
+}
+
+function drawActors() {
+  $("actors").innerHTML = (DATA.actors || []).map((a) => {
+    const on = sel && sel.type === "actor" && sel.id === a.id;
+    return `<button class="chip ${a.kind} ${on ? "on" : ""}" data-actor="${a.id}"><b>${esc(a.name)}</b> · ${a.kind}</button>`;
+  }).join("") || `<span class="hint">none</span>`;
+}
+
+function emptyState(kind) {
+  const tips = {
+    rings: `No rings data. Map components onto rings 0–3 in <code>rings</code>, or run the <b>clean-code</b> skill and add <code>links["clean-code"]</code>.`,
+    class: `No class diagram. Put a Mermaid <code>classDiagram</code> in <code>class.mermaid</code>, or run <b>plantuml</b> and set <code>class.image</code> / <code>links.plantuml</code>.`,
+    logical: `No logical boxes yet.`,
+    physical: `No physical units yet.`,
+    application: `No application modules yet.`,
+  };
+  return `<foreignObject x="80" y="180" width="740" height="200"><div xmlns="http://www.w3.org/1999/xhtml" class="hint" style="text-align:center;padding:24px;font:14px ui-sans-serif,system-ui">${tips[kind] || "No data."}</div></foreignObject>`;
+}
+
+function drawGraph() {
+  const g = graph(view);
+  const pos = withPlaced(layoutCircle(g.nodes));
+  const f = focusIds();
+  const edges = view === "application" ? (DATA.application?._meta?.edges || g.edges) : g.edges;
+  let s = markerDefs();
+  if (!g.nodes.length) { $("canvas").innerHTML = s + emptyState(view); return; }
+  edges.forEach((e) => {
+    if (!pos[e.from] || !pos[e.to]) return;
+    const hi = sel && ((sel.type === "node" && (e.from === sel.id || e.to === sel.id)) ||
+      (sel.type !== "node" && f && f.has(e.from) && f.has(e.to)));
+    const cls = hi ? "hi" : e.cycle ? "cyc" : e.bi ? "bi" : "";
+    const mk = hi ? "accent" : e.cycle ? "warn" : e.bi ? "bad" : "edge";
+    const d = f && !hi && !(f.has(e.from) && f.has(e.to));
+    s += `<path class="edge ${cls} ${d ? "dim" : ""}" marker-end="url(#ar-${mk})" d="${curve(pos, e.from, e.to, 28, 28, 20)}">
+      <title>${esc(e.from)} → ${esc(e.to)}${e.label ? " · " + esc(e.label) : ""}</title></path>`;
+    if (e.label) {
+      const [x1, y1] = pos[e.from], [x2, y2] = pos[e.to];
+      s += `<text class="${d ? "dim" : ""}" x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 6}" text-anchor="middle" style="font-size:10px;fill:var(--muted)">${esc(e.label)}</text>`;
+    }
+  });
+  g.nodes.forEach((n) => {
+    const [x, y, t] = pos[n.id];
+    const worst = Math.max(0, ...findings.filter((fd) => fd.view === view && touched(fd).includes(n.id)).map((fd) => RANK[fd.strength]));
+    const stroke = ["var(--ok)", "var(--spec)", "var(--warn)", "var(--bad)"][worst];
+    const d = f && !f.has(n.id);
+    const on = sel && sel.type === "node" && sel.id === n.id;
+    const w = Math.max(72, n.name.length * 7);
+    s += `<g class="node ${d ? "dim" : ""}" data-node="${n.id}">
+      <rect x="${x - w / 2}" y="${y - 14}" width="${w}" height="28" rx="6" fill="${g.fill}" stroke="${on ? "var(--accent)" : stroke}" stroke-width="${on ? 3 : 2}"/>
+      <text x="${x}" y="${y + 4}" text-anchor="middle" font-weight="${on ? 700 : 500}">${esc(n.name)}</text></g>`;
+    if (view === "logical" && n.actors?.length) {
+      n.actors.forEach((aid, i) => {
+        const a = actors[aid];
+        if (!a) return;
+        s += `<circle class="${d ? "dim" : ""}" cx="${x - w / 2 + 8 + i * 10}" cy="${y - 18}" r="4" fill="var(--${a.kind})"/>`;
+      });
+    }
+  });
+  $("canvas").innerHTML = s;
+}
+
+function markerDefs() {
+  return `<defs>${["edge", "bad", "warn", "accent"].map((k) =>
+    `<marker id="ar-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--${k})"/></marker>`).join("")}</defs>`;
+}
+
+function drawRings() {
+  const comps = DATA.rings?.components || [];
+  const edges = DATA.rings?._meta?.edges || DATA.rings?.edges || [];
+  const byId = Object.fromEntries(comps.map((c) => [c.id, c]));
+  if (!comps.length) { $("canvas").innerHTML = markerDefs() + emptyState("rings"); return; }
+  const pos = withPlaced(layoutRings(comps));
+  const f = focusIds();
+  const C = 380, BAND = 90;
+  let s = markerDefs();
+  for (let r = 3; r >= 0; r--) {
+    s += `<circle cx="${C}" cy="${C}" r="${(r + 1) * BAND}" fill="var(--r${r})" stroke="var(--line)"/>`;
+    s += `<text x="${C}" y="${C - (r + 1) * BAND + 16}" text-anchor="middle" style="font-size:10px;letter-spacing:.1em;fill:var(--muted)">${RING_NAMES[r].toUpperCase()}</text>`;
+  }
+  edges.forEach((e) => {
+    if (!pos[e.from] || !pos[e.to]) return;
+    const hi = sel && ((sel.type === "node" && (e.from === sel.id || e.to === sel.id)) ||
+      (sel.type !== "node" && f && f.has(e.from) && f.has(e.to)));
+    const cls = hi ? "hi" : e.outward ? "out" : "";
+    const mk = hi ? "accent" : e.outward ? "bad" : "edge";
+    const d = f && !hi;
+    s += `<path class="edge ${cls} ${d ? "dim" : ""}" marker-end="url(#ar-${mk})" d="${curve(pos, e.from, e.to, 8, 8, 18)}">
+      <title>${esc(byId[e.from]?.name)} → ${esc(byId[e.to]?.name)}${e.outward ? " · outward" : ""}</title></path>`;
+  });
+  comps.forEach((c) => {
+    const [x, y, t] = pos[c.id];
+    const worst = Math.max(0, ...findings.filter((fd) => touched(fd).includes(c.id)).map((fd) => RANK[fd.strength]));
+    const fill = ["var(--ok)", "var(--spec)", "var(--warn)", "var(--bad)"][worst];
+    const right = Math.cos(t) >= -0.01 || (x === C && y === C);
+    const d = f && !f.has(c.id);
+    const on = sel && sel.type === "node" && sel.id === c.id;
+    s += `<g class="node ${d ? "dim" : ""}" data-node="${c.id}">
+      <circle cx="${x}" cy="${y}" r="8" fill="${fill}" ${on ? 'stroke="var(--accent)" stroke-width="3"' : ""}/>
+      <text x="${x + (right ? 1 : -1) * 13}" y="${y + 4}" text-anchor="${right ? "start" : "end"}" font-weight="${on ? 700 : 500}">${esc(c.name)}</text>
+      <title>${esc(c.name)} · ${RING_NAMES[c.ring]}</title></g>`;
+  });
+  $("canvas").innerHTML = s;
+}
+
+async function drawClass() {
+  $("canvas").style.display = "none";
+  const host = $("mermaidHost");
+  host.style.display = "";
+  if (DATA.class?.image) {
+    host.innerHTML = `<img src="${esc(DATA.class.image)}" alt="class diagram" style="max-width:100%"/>`;
+    return;
+  }
+  if (!DATA.class?.mermaid) {
+    host.innerHTML = `<div class="empty">${emptyState("class").replace(/<\/?foreignObject[^>]*>|<\/?div[^>]*>/g, "")}</div>`;
+    // simpler empty
+    host.innerHTML = `<div class="empty">No class diagram.<br/>Put a Mermaid <code>classDiagram</code> in <code>class.mermaid</code>, or run <b>plantuml</b> and set <code>class.image</code>.</div>`;
+    return;
+  }
+  const id = "mmd-" + Date.now();
+  host.innerHTML = `<pre class="mermaid" id="${id}">${esc(DATA.class.mermaid)}</pre>`;
+  const wait = async () => {
+    for (let i = 0; i < 40; i++) {
+      if (window.__mermaid) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    if (window.__mermaid) {
+      try {
+        await window.__mermaid.run({ nodes: [document.getElementById(id)] });
+        const svg = host.querySelector("svg");
+        if (svg) {
+          svg.removeAttribute("height");
+          Object.assign(svg.style, { maxWidth: "none", width: "100%", height: "70vh" });
+          const vb = svg.viewBox.baseVal;
+          panZoom(svg, "class", [vb.x, vb.y, vb.width, vb.height]);
+        }
+      }
+      catch (err) { host.innerHTML = `<div class="empty">Mermaid error: ${esc(err.message)}</div><pre>${esc(DATA.class.mermaid)}</pre>`; }
+    }
+  };
+  wait();
+}
+
+function setLegend() {
+  if (view === "logical") $("legend").innerHTML = `<span>boxes = responsibilities · dots = actors</span>`;
+  else if (view === "physical") $("legend").innerHTML = `<span>units = process / package / binary / folder</span>`;
+  else if (view === "application") $("legend").innerHTML = `<span><i style="border-color:var(--edge)"></i>import</span><span><i style="border-color:var(--warn);border-top-style:dashed"></i>cycle</span><span><i style="border-color:var(--bad)"></i>bidirectional</span>`;
+  else if (view === "rings") $("legend").innerHTML = `<span>policy centre → detail edge</span><span><i style="border-color:var(--bad)"></i>points outward</span><span>node colour = worst finding</span>`;
+  else $("legend").innerHTML = `<span>Mermaid classDiagram · wheel zooms, drag pans, double-click resets</span>`;
+}
+
+function linkNode(id) { return `<a data-node="${id}">${esc(id)}</a>`; }
+
+function drawDetail() {
+  const el = $("detail");
+  if (!sel) {
+    el.innerHTML = `<h2>How to read this</h2>
+      <p class="hint">Header links every diagram. <b>Rings</b> is Clean Architecture placement. <b>Class</b> is types (Mermaid; plantuml for image export).</p>
+      <p class="hint">Click a node, actor, finding, or principle. Esc clears.</p>
+      <p class="hint">Wheel zooms at the cursor. Drag a box to move it, or empty space to pan. Double-click a box to put it back, or empty space to reset the zoom.</p>`;
+    return;
+  }
+  if (sel.type === "actor") {
+    const a = actors[sel.id];
+    const boxes = (DATA.logical?.boxes || []).filter((b) => b.actors?.includes(a.id));
+    el.innerHTML = `<h2>${a.kind}</h2><h3>${esc(a.name)}</h3>
+      <h2>Boxes</h2><ul>${boxes.map((b) => `<li>${linkNode(b.id)} — ${esc(b.name)}</li>`).join("") || "<li class=hint>none</li>"}</ul>`;
+    return;
+  }
+  if (sel.type === "principle") {
+    const [grp, name, rule] = PRINCIPLES[sel.id] || ["?", sel.id, ""];
+    const fs = findings.filter((fd) => fd.principle === sel.id);
+    el.innerHTML = `<h2>${grp} · ${sel.id}</h2><h3>${name}</h3><p>${rule}</p>
+      <h2>Findings</h2><ul>${fs.map((fd) => `<li><a data-finding="${fd.id}">${esc(fd.title)}</a></li>`).join("") || "<li class=hint>checked, clean</li>"}</ul>`;
+    return;
+  }
+  if (sel.type === "finding") {
+    const fd = fById[sel.id];
+    const [grp, name, rule] = PRINCIPLES[fd.principle] || [fd.view, fd.principle, ""];
+    el.innerHTML = `<h2>${grp} · ${name}</h2><h3>${esc(fd.title)}</h3>
+      <div class="row"><span class="badge ${fd.strength}">${fd.strength}</span>
+        <span class="badge">${fd.view}</span>
+        ${fd.measured ? '<span class="badge measured">measured</span>' : ""}</div>
+      <p class="hint"><i>${rule}</i></p>
+      <p><b>Problem.</b> ${esc(fd.problem)}</p>
+      ${fd.fix ? `<p><b>Fix.</b> ${esc(fd.fix)}</p>` : ""}
+      ${fd.before || fd.after ? `<div class="ba"><div><span>before</span><pre>${esc(fd.before)}</pre></div><div><span>after</span><pre>${esc(fd.after)}</pre></div></div>` : ""}
+      ${fd.files?.length ? `<h2 style="margin-top:12px">Files</h2><div class="mono">${fd.files.map(esc).join("<br>")}</div>` : ""}
+      <h2 style="margin-top:12px">Touches</h2><ul>${touched(fd).map((id) => `<li>${linkNode(id)}</li>`).join("")}</ul>`;
+    return;
+  }
+  const g = graph(view);
+  const n = g.nodes.find((x) => x.id === sel.id);
+  if (!n) { el.innerHTML = `<p class="hint">Not on this view — try another tab in the header.</p>`; return; }
+  const outs = g.edges.filter((e) => e.from === n.id);
+  const inns = g.edges.filter((e) => e.to === n.id);
+  const fs = findings.filter((fd) => touched(fd).includes(n.id));
+  el.innerHTML = `<h2>${view}</h2><h3>${esc(n.name)}</h3>
+    <div class="mono hint">${(n.paths || []).map(esc).join("<br>") || ""}</div>
+    ${n.ring != null ? `<dl><dt>ring</dt><dd>${n.ring} · ${RING_NAMES[n.ring]}</dd></dl>` : ""}
+    ${n.kind ? `<dl><dt>kind</dt><dd>${esc(n.kind)}</dd></dl>` : ""}
+    ${n.fanIn != null ? `<dl><dt>fan-in</dt><dd>${n.fanIn}</dd><dt>fan-out</dt><dd>${n.fanOut}</dd></dl>` : ""}
+    ${n.actors ? `<h2>Actors</h2><ul>${n.actors.map((aid) => `<li><a data-actor="${aid}">${esc(actors[aid]?.name || aid)}</a></li>`).join("")}</ul>` : ""}
+    <h2>Out</h2><ul>${outs.map((e) => `<li>${linkNode(e.to)}${e.label ? " · " + esc(e.label) : ""}${e.outward ? ' <span class="badge strong">outward</span>' : ""}</li>`).join("") || "<li class=hint>nothing</li>"}</ul>
+    <h2>In</h2><ul>${inns.map((e) => `<li>${linkNode(e.from)}</li>`).join("") || "<li class=hint>nothing</li>"}</ul>
+    <h2>Findings</h2><ul>${fs.map((fd) => `<li><a data-finding="${fd.id}">${esc(fd.title)}</a></li>`).join("") || "<li class=hint>clean</li>"}</ul>`;
+}
+
+function drawScorecard() {
+  const relevant = Object.keys(PRINCIPLES).filter((id) => {
+    const g = PRINCIPLES[id][0];
+    return g === "shared" || views.includes(g) || findings.some((f) => f.principle === id);
+  });
+  $("scorecard").innerHTML = relevant.map((id) => {
+    const fs = findings.filter((f) => f.principle === id);
+    const worst = fs.reduce((w, f) => (RANK[f.strength] > RANK[w] ? f.strength : w), "speculative");
+    const on = sel && sel.type === "principle" && sel.id === id;
+    return `<button class="chip ${fs.length ? worst : "clean"} ${on ? "on" : ""}" data-principle="${id}" title="${PRINCIPLES[id][1]}: ${PRINCIPLES[id][2]}"><b>${id}</b>${fs.length ? " " + fs.length : " ✓"}</button>`;
+  }).join("");
+}
+
+function drawFindings() {
+  let list = findings.filter((f) => views.includes(f.view) || hasData(f.view));
+  if (sel?.type === "principle") list = list.filter((f) => f.principle === sel.id);
+  else if (sel?.type === "node") list = list.filter((f) => touched(f).includes(sel.id));
+  else if (sel?.type === "actor") {
+    const boxes = new Set((DATA.logical?.boxes || []).filter((b) => b.actors?.includes(sel.id)).map((b) => b.id));
+    list = list.filter((f) => touched(f).some((id) => boxes.has(id)));
+  } else {
+    list = list.filter((f) => f.view === view || !["logical", "physical", "application", "rings", "class"].includes(f.view));
+    // show findings for current view primarily
+    const forView = findings.filter((f) => f.view === view);
+    if (forView.length) list = forView;
+  }
+  $("findingsTitle").textContent = `Findings (${list.length})`;
+  $("findings").innerHTML = list.map((f) => `<article class="panel finding ${sel && sel.type === "finding" && sel.id === f.id ? "on" : ""}" data-finding="${f.id}">
+    <div class="row"><span class="badge ${f.strength}">${f.strength}</span>
+      <span class="badge" style="color:var(--muted)">${f.view} · ${f.principle}${f.measured ? " · measured" : ""}</span></div>
+    <h4>${esc(f.title)}</h4><p>${esc(f.problem)}</p></article>`).join("") || `<p class="hint">Nothing here.</p>`;
+}
+
+// Pan/zoom by viewBox, kept per view so selecting a node keeps your zoom.
+// Wheel zooms at the cursor; drag pans (or moves a canvas node); double-click resets.
+const zooms = {};
+function panZoom(svg, key, base) {
+  svg.classList.add("pz");
+  svg._pz = { key, base };
+  const set = (vb) => { zooms[svg._pz.key] = vb; svg.setAttribute("viewBox", vb.join(" ")); };
+  set(zooms[key] || base);
+  if (svg._pzBound) return;
+  svg._pzBound = true;
+  const cur = () => zooms[svg._pz.key];
+  const at = (ev, ctm) => new DOMPoint(ev.clientX, ev.clientY).matrixTransform(ctm.inverse());
+  svg.addEventListener("wheel", (ev) => {
+    ev.preventDefault();
+    const [x, y, w, h] = cur();
+    const p = at(ev, svg.getScreenCTM());
+    const k = Math.exp(ev.deltaY * 0.0015);
+    set([p.x - (p.x - x) * k, p.y - (p.y - y) * k, w * k, h * k]);
+  }, { passive: false });
+  let drag = null;
+  svg.addEventListener("pointerdown", (ev) => {
+    if (ev.button !== 0) return;
+    drag = { ctm: svg.getScreenCTM(), vb: cur(), x: ev.clientX, y: ev.clientY, moved: false };
+    drag.p0 = at(ev, drag.ctm);
+    // On the canvas, dragging a node moves it; dragging empty space pans.
+    const node = svg.id === "canvas" && ev.target.closest("[data-node]")?.dataset.node;
+    if (node && drawnPos[node]) drag.node = { id: node, from: drawnPos[node].slice(0, 2) };
+  });
+  svg.addEventListener("pointermove", (ev) => {
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 4) return;
+    if (!drag.moved) { drag.moved = true; svg.setPointerCapture(ev.pointerId); svg.classList.add("panning"); }
+    const p = at(ev, drag.ctm);
+    if (drag.node) {
+      const { id, from } = drag.node;
+      (placed[view] ||= {})[id] = [from[0] + p.x - drag.p0.x, from[1] + p.y - drag.p0.y];
+      view === "rings" ? drawRings() : drawGraph();
+      return;
+    }
+    const [x, y, w, h] = drag.vb;
+    set([x - (p.x - drag.p0.x), y - (p.y - drag.p0.y), w, h]);
+  });
+  const end = () => {
+    if (drag?.node && drag.moved) savePlaced();
+    if (drag?.moved) {
+      // A pan is not a click on whatever node it started over.
+      svg.addEventListener("click", (e) => e.stopPropagation(), { capture: true, once: true });
+    }
+    drag = null;
+    svg.classList.remove("panning");
+  };
+  svg.addEventListener("pointerup", end);
+  svg.addEventListener("pointercancel", end);
+  svg.addEventListener("dblclick", (ev) => {
+    ev.preventDefault();
+    // Double-click a node: back to its layout spot. Elsewhere: reset the zoom.
+    const node = svg.id === "canvas" && ev.target.closest("[data-node]")?.dataset.node;
+    if (node && placed[view]?.[node]) {
+      delete placed[view][node];
+      savePlaced();
+      view === "rings" ? drawRings() : drawGraph();
+    } else set(svg._pz.base);
+  });
+}
+
+// Node positions you dragged, per view, kept in this browser per repo.
+const PLACED_KEY = "design-views:placed:" + DATA.repo;
+let placed = {};
+try { placed = JSON.parse(localStorage.getItem(PLACED_KEY)) || {}; } catch {}
+function savePlaced() {
+  try { localStorage.setItem(PLACED_KEY, JSON.stringify(placed)); } catch {}
+}
+// Where the last draw put each node, so a drag starts from it.
+let drawnPos = {};
+function withPlaced(pos) {
+  for (const [id, xy] of Object.entries(placed[view] || {})) if (pos[id]) pos[id] = [...xy, pos[id][2]];
+  return (drawnPos = pos);
+}
+
+function render() {
+  const parts = ALL.filter(hasData).map((v) => LABELS[v].toLowerCase());
+  $("title").textContent = `${DATA.repo}: design views`;
+  $("subtitle").textContent = `${parts.join(" · ") || "empty"} · ${findings.length} findings · viewing ${LABELS[view] || view}`;
+  $("metaPanel").style.display = view === "class" ? "none" : "";
+  drawTopnav(); drawActors(); drawScorecard(); setLegend(); drawDetail(); drawFindings();
+
+  if (view === "class") {
+    drawClass();
+  } else {
+    $("mermaidHost").style.display = "none";
+    $("mermaidHost").innerHTML = "";
+    $("canvas").style.display = "";
+    panZoom($("canvas"), view, view === "rings" ? [-70, 0, 900, 760] : [0, 0, 900, 560]);
+    if (view === "rings") drawRings();
+    else drawGraph();
+  }
+}
+
+document.addEventListener("click", (ev) => {
+  const skill = ev.target.closest("[data-skill]");
+  if (skill) {
+    ev.preventDefault();
+    const name = skill.dataset.skill;
+    alert(name === "clean-code"
+      ? "Invoke the clean-code skill for a full rings audit, then set links[\"clean-code\"] to its HTML path — or map rings{} into this data.json."
+      : "Invoke the plantuml skill for PNG/SVG class export, or put a Mermaid classDiagram in class.mermaid.");
+    return;
+  }
+  const t = ev.target.closest("[data-view],[data-node],[data-finding],[data-principle],[data-actor]");
+  if (!t) return;
+  if (t.dataset.view) {
+    view = t.dataset.view;
+    if (sel?.type === "node") sel = null;
+    render();
+  } else if (t.dataset.node) select({ type: "node", id: t.dataset.node });
+  else if (t.dataset.finding) {
+    const fd = fById[t.dataset.finding];
+    if (fd) view = fd.view;
+    select({ type: "finding", id: t.dataset.finding });
+  } else if (t.dataset.principle) select({ type: "principle", id: t.dataset.principle });
+  else if (t.dataset.actor) {
+    if (hasData("logical")) view = "logical";
+    select({ type: "actor", id: t.dataset.actor });
+  }
+});
+document.addEventListener("keydown", (e) => e.key === "Escape" && select(null));
+
+render();
+</script>
+</body>
+</html>

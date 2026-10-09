@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clean Architecture Map</title>
+<style>
+:root {
+  --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1f24; --muted: #6b7280; --line: #d9d6cf;
+  --r0: #e8efe6; --r1: #edf0f7; --r2: #f6efe4; --r3: #f3e8ea;
+  --accent: #4f46e5; --bad: #dc2626; --warn: #d97706; --ok: #059669; --spec: #64748b; --co: #9333ea;
+  --edge: #9ca3af;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a; --panel: #1c1f25; --ink: #e8e6e1; --muted: #9aa0a9; --line: #343842;
+    --r0: #1d2a20; --r1: #1e2433; --r2: #2d261b; --r3: #2f1f24;
+    --accent: #818cf8; --bad: #f87171; --warn: #fbbf24; --ok: #34d399; --spec: #94a3b8; --co: #c084fc;
+    --edge: #5b616b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+main { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font: 600 26px/1.2 Georgia, serif; margin: 0; }
+h2 { font: 600 13px/1 ui-sans-serif, system-ui; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+.sub { color: var(--muted); margin-top: 4px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; background: var(--panel); color: var(--ink); }
+.chip b { font-weight: 600; }
+.chip.strong { border-color: var(--bad); color: var(--bad); }
+.chip.worth { border-color: var(--warn); color: var(--warn); }
+.chip.speculative { border-color: var(--spec); color: var(--spec); }
+.chip.clean { border-color: var(--ok); color: var(--ok); }
+.chip.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.group { display: flex; gap: 6px; align-items: center; margin-right: 14px; }
+.group > span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.folder.business { border-color: var(--ok); }
+.folder.technical { border-style: dashed; color: var(--muted); }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; margin-top: 16px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+.tab { border: 0; background: none; color: var(--muted); padding: 6px 10px; border-radius: 6px; cursor: pointer; font: inherit; }
+.tab.on { background: var(--bg); color: var(--ink); font-weight: 600; }
+.layers { margin-left: auto; display: flex; gap: 12px; font-size: 12px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--ink); font-size: 11px; }
+.node { cursor: pointer; }
+.node circle { stroke: var(--panel); stroke-width: 2; }
+.dim { opacity: .15; }
+.edge { fill: none; stroke: var(--edge); stroke-width: 1.3; }
+.edge.out { stroke: var(--bad); stroke-width: 2.2; }
+.edge.cyc { stroke: var(--warn); stroke-dasharray: 5 3; stroke-width: 2; }
+.edge.hi { stroke: var(--accent); stroke-width: 2.4; }
+.co { stroke: var(--co); fill: none; stroke-linecap: round; }
+.co.known { opacity: .35; }
+.legend { font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 4px; }
+.detail h3 { margin: 0 0 4px; font: 600 18px/1.25 Georgia, serif; }
+.detail dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 10px 0; font-size: 13px; }
+.detail dt { color: var(--muted); }
+.detail ul { margin: 4px 0 10px; padding-left: 18px; }
+.mono, code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; overflow-x: auto; margin: 4px 0; white-space: pre-wrap; }
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ba div > span { font-size: 11px; text-transform: uppercase; color: var(--muted); }
+.findings { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.finding { cursor: pointer; }
+.finding.on { outline: 2px solid var(--accent); }
+.finding h4 { margin: 6px 0 4px; font-size: 14px; }
+.finding p { margin: 0; color: var(--muted); font-size: 13px; }
+.badge { font-size: 11px; padding: 1px 7px; border-radius: 4px; border: 1px solid; }
+.badge.strong { color: var(--bad); } .badge.worth { color: var(--warn); } .badge.speculative { color: var(--spec); }
+.badge.measured { color: var(--accent); }
+.hint { color: var(--muted); font-size: 13px; }
+a { color: var(--accent); cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="title"></h1>
+    <div class="sub" id="subtitle"></div>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Principles: click to filter</h2>
+    <div class="row" id="scorecard"></div>
+    <h2 style="margin-top:14px">Screaming architecture: top-level folders</h2>
+    <div class="row" id="folders"></div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab on" data-view="rings">Dependency Rule</button>
+        <button class="tab" data-view="seq">Main Sequence</button>
+        <div class="layers" id="layers">
+          <label><input type="checkbox" id="showImports" checked /> imports</label>
+          <label id="coLabel"><input type="checkbox" id="showCo" /> co-change ≥ <input type="range" id="coMin" min="2" max="20" value="3" style="width:80px;vertical-align:middle" /> <span id="coMinVal">3</span></label>
+          <label id="churnLabel"><input type="checkbox" id="sizeChurn" checked /> size by churn</label>
+        </div>
+      </div>
+      <svg id="rings" viewBox="-70 0 900 760"></svg>
+      <svg id="seq" viewBox="0 0 520 520" style="display:none"></svg>
+      <div class="legend" id="legend"></div>
+    </section>
+    <aside class="panel detail" id="detail"></aside>
+  </div>
+
+  <section>
+    <h2 style="margin-top:20px" id="findingsTitle">Findings</h2>
+    <div class="findings" id="findings"></div>
+  </section>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+
+const PRINCIPLES = {
+  SRP: ["SOLID", "Single Responsibility", "A module answers to one actor."],
+  OCP: ["SOLID", "Open-Closed", "Extend by adding code, not editing it."],
+  LSP: ["SOLID", "Liskov Substitution", "Implementations honour the contract."],
+  ISP: ["SOLID", "Interface Segregation", "Depend only on what you use."],
+  DIP: ["SOLID", "Dependency Inversion", "Policy owns the interface; the detail implements it."],
+  REP: ["Cohesion", "Reuse/Release Equivalence", "The granule of reuse is the granule of release."],
+  CCP: ["Cohesion", "Common Closure", "What changes together lives together."],
+  CRP: ["Cohesion", "Common Reuse", "Users of a component use all of it."],
+  ADP: ["Coupling", "Acyclic Dependencies", "No cycles in the component graph."],
+  SDP: ["Coupling", "Stable Dependencies", "Depend in the direction of stability."],
+  SAP: ["Coupling", "Stable Abstractions", "As abstract as it is stable."],
+  DEP: ["Boundaries", "Dependency Rule", "Source dependencies point inward only."],
+  SCREAM: ["Boundaries", "Screaming Architecture", "Folders name the business, not the tools."],
+  DETAILS: ["Boundaries", "UI & DB are details", "Details plug into policy, never steer it."],
+};
+const RINGS = ["Entities", "Use cases", "Interface adapters", "Frameworks & drivers"];
+const RANK = { strong: 3, worth: 2, speculative: 1 };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (n) => (Math.round(n * 100) / 100).toFixed(2);
+
+// ---- Measure: everything below is derived from facts, never judged ----
+const comps = DATA.components;
+const byId = Object.fromEntries(comps.map((c) => [c.id, c]));
+const edges = DATA.edges.filter((e) => e.from !== e.to);
+const out = {}, inn = {};
+comps.forEach((c) => { out[c.id] = new Set(); inn[c.id] = new Set(); });
+edges.forEach((e) => { out[e.from].add(e.to); inn[e.to].add(e.from); });
+comps.forEach((c) => {
+  const fi = inn[c.id].size, fo = out[c.id].size;
+  c.fanIn = fi; c.fanOut = fo;
+  c.I = fi + fo ? fo / (fi + fo) : 0;
+  c.A = c.total ? c.abstract / c.total : 0;
+  c.D = Math.abs(c.A + c.I - 1);
+});
+
+// Tarjan SCC for cycles
+const sccOf = {}; const sccs = [];
+{
+  let idx = 0; const index = {}, low = {}, stack = [], on = new Set();
+  const visit = (v) => {
+    index[v] = low[v] = idx++; stack.push(v); on.add(v);
+    for (const w of out[v]) {
+      if (index[w] === undefined) { visit(w); low[v] = Math.min(low[v], low[w]); }
+      else if (on.has(w)) low[v] = Math.min(low[v], index[w]);
+    }
+    if (low[v] === index[v]) {
+      const s = []; let w;
+      do { w = stack.pop(); on.delete(w); s.push(w); } while (w !== v);
+      if (s.length > 1) { sccs.push(s); s.forEach((x) => (sccOf[x] = sccs.length - 1)); }
+    }
+  };
+  comps.forEach((c) => index[c.id] === undefined && visit(c.id));
+}
+edges.forEach((e) => {
+  // Adapters (ring 2) may use drivers (ring 3): Bob keeps SQL in the adapter ring. Policy (0-1) may not.
+  e.outward = byId[e.from].ring <= 1 && byId[e.from].ring < byId[e.to].ring;
+  e.cycle = sccOf[e.from] !== undefined && sccOf[e.from] === sccOf[e.to];
+  e.sdp = byId[e.to].I - byId[e.from].I > 0.1;
+});
+
+const H = DATA.history;
+const churn = (id) => (H && H.churn[id]) || 0;
+const maxChurn = H ? Math.max(1, ...Object.values(H.churn)) : 1;
+const linked = (a, b) => out[a].has(b) || out[b].has(a);
+
+const measured = [];
+edges.filter((e) => e.outward).forEach((e, i) => measured.push({
+  id: `m-dep-${i}`, principle: "DEP", strength: "strong", measured: true, components: [e.from, e.to],
+  title: `${byId[e.from].name} depends outward on ${byId[e.to].name}`,
+  problem: `${RINGS[byId[e.from].ring]} → ${RINGS[byId[e.to].ring]}. ${e.note || ""}`,
+  fix: `${byId[e.from].name} declares the interface it needs; ${byId[e.to].name} implements it.`,
+}));
+sccs.forEach((s, i) => measured.push({
+  id: `m-adp-${i}`, principle: "ADP", strength: "strong", measured: true, components: s,
+  title: `Cycle: ${s.map((x) => byId[x].name).join(" ↔ ")}`,
+  problem: `${s.length} components reach each other; none can change or release alone.`,
+  fix: "Break one edge: move the shared piece into its own component, or invert it with an interface.",
+}));
+edges.filter((e) => e.sdp && !e.outward).forEach((e, i) => measured.push({
+  id: `m-sdp-${i}`, principle: "SDP", strength: "worth", measured: true, components: [e.from, e.to],
+  title: `${byId[e.from].name} leans on less stable ${byId[e.to].name}`,
+  problem: `I ${fmt(byId[e.from].I)} depends on I ${fmt(byId[e.to].I)}.`,
+  fix: "Point the dependency at something more stable, or pull an interface into the stable side.",
+}));
+comps.forEach((c) => {
+  if (c.A < 0.3 && c.I < 0.3 && c.fanIn >= 2) measured.push({
+    id: `m-sap-${c.id}`, principle: "SAP", strength: "worth", measured: true, components: [c.id],
+    title: `${c.name} sits in the zone of pain`,
+    problem: `Stable (I ${fmt(c.I)}, fan-in ${c.fanIn}) and concrete (A ${fmt(c.A)}): every change ripples.`,
+    fix: "Extract interfaces for what dependents use, or accept it if it rarely changes.",
+  });
+  if (c.A > 0.7 && c.I > 0.7) measured.push({
+    id: `m-sapu-${c.id}`, principle: "SAP", strength: "speculative", measured: true, components: [c.id],
+    title: `${c.name} sits in the zone of uselessness`,
+    problem: `Abstract (A ${fmt(c.A)}) but nobody depends on it (I ${fmt(c.I)}).`,
+    fix: "Delete the unused abstractions.",
+  });
+});
+if (H) H.cochange.filter((p) => !linked(p.a, p.b) && p.n >= 3 && p.n / Math.min(churn(p.a), churn(p.b)) >= 0.5)
+  .forEach((p, i) => measured.push({
+    id: `m-ccp-${i}`, principle: "CCP", strength: "worth", measured: true, components: [p.a, p.b],
+    title: `${byId[p.a].name} and ${byId[p.b].name} change together without an import`,
+    problem: `${p.n} shared commits, ${Math.round((100 * p.n) / Math.min(churn(p.a), churn(p.b)))}% of the quieter one's history. Hidden coupling.`,
+    fix: "Find the shared concept and give it one home.",
+  }));
+
+const findings = [...(DATA.findings || []), ...measured]
+  .sort((a, b) => RANK[b.strength] - RANK[a.strength]);
+const fById = Object.fromEntries(findings.map((f) => [f.id, f]));
+
+// ---- State ----
+let sel = null;        // { type: "comp" | "finding" | "principle", id }
+let view = "rings";
+
+function focus() {
+  if (!sel) return null;
+  if (sel.type === "comp") return new Set([sel.id, ...out[sel.id], ...inn[sel.id]]);
+  if (sel.type === "finding") return new Set(fById[sel.id].components);
+  return new Set(findings.filter((f) => f.principle === sel.id).flatMap((f) => f.components));
+}
+function select(s) {
+  sel = s && sel && s.type === sel.type && s.id === sel.id ? null : s;
+  render();
+}
+
+// ---- Header ----
+$("title").textContent = `${DATA.repo}: Clean Architecture map`;
+$("subtitle").textContent = `${comps.length} components · ${edges.length} imports · ${findings.length} findings` +
+  (H ? ` · ${H.commits} commits of history` : " · no git history");
+if (!H) { $("coLabel").style.display = "none"; $("churnLabel").style.display = "none"; }
+$("folders").innerHTML = (DATA.folders || []).map((f) =>
+  `<span class="chip folder ${f.kind}" title="${f.kind}">${esc(f.name)}/</span>`).join("") ||
+  `<span class="hint">none recorded</span>`;
+
+// ---- Rings view ----
+const C = 380, BAND = 90;
+function layout() {
+  const pos = {};
+  [0, 1, 2, 3].forEach((r) => {
+    const list = comps.filter((c) => c.ring === r).sort((a, b) => a.id.localeCompare(b.id));
+    const rad = r === 0 && list.length === 1 ? 0 : r * BAND + BAND / 2;
+    list.forEach((c, i) => {
+      const t = -Math.PI / 2 + r * 0.45 + (2 * Math.PI * i) / list.length;
+      pos[c.id] = [C + rad * Math.cos(t), C + rad * Math.sin(t), t];
+    });
+  });
+  return pos;
+}
+const POS = layout();
+const nodeR = (id) => ($("sizeChurn").checked && H ? 6 + 10 * Math.sqrt(churn(id) / maxChurn) : 8);
+
+function curve(a, b, ra, rb, bend) {
+  const [x1, y1] = POS[a], [x2, y2] = POS[b];
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+  const sx = x1 + (dx / len) * ra, sy = y1 + (dy / len) * ra;
+  const ex = x2 - (dx / len) * (rb + 4), ey = y2 - (dy / len) * (rb + 4);
+  const mx = (sx + ex) / 2 - (dy / len) * bend, my = (sy + ey) / 2 + (dx / len) * bend;
+  return `M${sx},${sy} Q${mx},${my} ${ex},${ey}`;
+}
+
+function drawRings() {
+  const f = focus();
+  const hiEdge = (e) => sel && ((sel.type === "comp" && (e.from === sel.id || e.to === sel.id)) ||
+    (sel.type !== "comp" && f.has(e.from) && f.has(e.to)));
+  let s = `<defs>${["edge", "bad", "warn", "accent"].map((k) =>
+    `<marker id="ar-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--${k})"/></marker>`).join("")}</defs>`;
+  for (let r = 3; r >= 0; r--) {
+    s += `<circle cx="${C}" cy="${C}" r="${(r + 1) * BAND}" fill="var(--r${r})" stroke="var(--line)"/>`;
+    s += `<text x="${C}" y="${C - (r + 1) * BAND + 16}" text-anchor="middle" style="font-size:10px;letter-spacing:.1em;fill:var(--muted)">${RINGS[r].toUpperCase()}</text>`;
+  }
+  if ($("showCo").checked && H) {
+    const min = +$("coMin").value;
+    const maxN = Math.max(1, ...H.cochange.map((p) => p.n));
+    H.cochange.filter((p) => p.n >= min).forEach((p) => {
+      const d = f && !(f.has(p.a) && f.has(p.b));
+      s += `<path class="co ${linked(p.a, p.b) ? "known" : ""} ${d ? "dim" : ""}" d="${curve(p.a, p.b, 0, 0, 0)}"
+        stroke-width="${1 + (5 * p.n) / maxN}"><title>${esc(byId[p.a].name)} + ${esc(byId[p.b].name)}: ${p.n} commits together${linked(p.a, p.b) ? "" : " (no import: hidden coupling)"}</title></path>`;
+    });
+  }
+  if ($("showImports").checked) edges.forEach((e) => {
+    const hi = hiEdge(e);
+    const cls = hi ? "hi" : e.outward ? "out" : e.cycle ? "cyc" : "";
+    const mk = hi ? "accent" : e.outward ? "bad" : e.cycle ? "warn" : "edge";
+    const d = f && !hi;
+    s += `<path class="edge ${cls} ${d ? "dim" : ""}" marker-end="url(#ar-${mk})" d="${curve(e.from, e.to, nodeR(e.from), nodeR(e.to), 18)}">
+      <title>${esc(byId[e.from].name)} → ${esc(byId[e.to].name)}${e.outward ? " · breaks the Dependency Rule" : ""}${e.cycle ? " · in a cycle" : ""}${e.note ? " · " + esc(e.note) : ""}</title></path>`;
+  });
+  comps.forEach((c) => {
+    const [x, y, t] = POS[c.id];
+    const worst = Math.max(0, ...findings.filter((fd) => fd.components.includes(c.id)).map((fd) => RANK[fd.strength]));
+    const fill = ["var(--ok)", "var(--spec)", "var(--warn)", "var(--bad)"][worst];
+    const right = Math.cos(t) >= -0.01 || (x === C && y === C);
+    const d = f && !f.has(c.id);
+    const on = sel && sel.type === "comp" && sel.id === c.id;
+    s += `<g class="node ${d ? "dim" : ""}" data-id="${c.id}">
+      <circle cx="${x}" cy="${y}" r="${nodeR(c.id)}" fill="${fill}" ${on ? 'stroke="var(--accent)" stroke-width="3"' : ""}/>
+      <text x="${x + (right ? 1 : -1) * (nodeR(c.id) + 5)}" y="${y + 4}" text-anchor="${right ? "start" : "end"}" font-weight="${on ? 700 : 500}">${esc(c.name)}</text>
+      <title>${esc(c.name)} · ${RINGS[c.ring]} · I ${fmt(c.I)} A ${fmt(c.A)}${H ? " · churn " + churn(c.id) : ""}</title></g>`;
+  });
+  $("rings").innerHTML = s;
+  $("legend").innerHTML = `<span><i style="border-color:var(--edge)"></i>import</span>
+    <span><i style="border-color:var(--bad)"></i>points outward (breaks the rule)</span>
+    <span><i style="border-color:var(--warn);border-top-style:dashed"></i>cycle</span>
+    ${H ? `<span><i style="border-color:var(--co);border-top-width:4px"></i>change together (faint = also imported)</span>` : ""}
+    <span>node colour = worst finding · ${H ? "size = churn" : ""}</span>`;
+}
+
+// ---- Main Sequence view ----
+function drawSeq() {
+  const f = focus();
+  const P = 50, W = 420, x = (i) => P + i * W, y = (a) => P + (1 - a) * W;
+  let s = `<rect x="${P}" y="${P}" width="${W}" height="${W}" fill="var(--panel)" stroke="var(--line)"/>
+    <path d="M${x(0)},${y(0)} L${x(0.45)},${y(0)} A${0.45 * W},${0.45 * W} 0 0 0 ${x(0)},${y(0.45)} Z" fill="var(--bad)" opacity=".12"/>
+    <path d="M${x(1)},${y(1)} L${x(0.55)},${y(1)} A${0.45 * W},${0.45 * W} 0 0 0 ${x(1)},${y(0.55)} Z" fill="var(--spec)" opacity=".15"/>
+    <line x1="${x(0)}" y1="${y(1)}" x2="${x(1)}" y2="${y(0)}" stroke="var(--ok)" stroke-dasharray="6 4" stroke-width="1.5"/>
+    <text x="${x(0) + 8}" y="${y(0) - 8}" style="fill:var(--bad);font-size:11px">zone of pain</text>
+    <text x="${x(1) - 8}" y="${y(1) + 16}" text-anchor="end" style="fill:var(--spec);font-size:11px">zone of uselessness</text>
+    <text x="${x(0.5) + 10}" y="${y(0.5) - 6}" style="fill:var(--ok);font-size:11px">Main Sequence</text>
+    <text x="${x(0.5)}" y="${y(0) + 34}" text-anchor="middle" style="fill:var(--muted)">Instability I = fan-out / (fan-in + fan-out) →</text>
+    <text transform="translate(${P - 30},${y(0.5)}) rotate(-90)" text-anchor="middle" style="fill:var(--muted)">Abstractness A →</text>
+    <text x="${x(0)}" y="${y(0) + 16}" text-anchor="middle" style="fill:var(--muted)">0</text>
+    <text x="${x(1)}" y="${y(0) + 16}" text-anchor="middle" style="fill:var(--muted)">1</text>
+    <text x="${x(0) - 10}" y="${y(1) + 4}" text-anchor="end" style="fill:var(--muted)">1</text>`;
+  comps.forEach((c, i) => {
+    const jitter = ((i * 37) % 11 - 5) * 1.5;   // separate identical points
+    const cx = x(c.I) + jitter, cy = y(c.A) + jitter;
+    const d = f && !f.has(c.id);
+    const on = sel && sel.type === "comp" && sel.id === c.id;
+    s += `<g class="node ${d ? "dim" : ""}" data-id="${c.id}">
+      <circle cx="${cx}" cy="${cy}" r="${on ? 8 : 6}" fill="var(--r${c.ring})" stroke="${c.D > 0.7 ? "var(--bad)" : "var(--ink)"}" stroke-width="${on ? 3 : 1.5}"/>
+      <text x="${cx + 10}" y="${cy + 4}">${esc(c.name)}</text>
+      <title>${esc(c.name)} · I ${fmt(c.I)} · A ${fmt(c.A)} · D ${fmt(c.D)}</title></g>`;
+  });
+  $("seq").innerHTML = s;
+  if (view === "seq") $("legend").innerHTML = `<span>fill = ring · red outline = D > 0.7 · dashed line = A + I = 1</span>`;
+}
+
+// ---- Detail panel ----
+function linkComp(id) { return `<a data-comp="${id}">${esc(byId[id].name)}</a>`; }
+function findingRow(fd) {
+  return `<li><a data-finding="${fd.id}">${esc(fd.title)}</a> <span class="badge ${fd.measured ? "measured" : fd.strength}">${fd.principle}</span></li>`;
+}
+function drawDetail() {
+  const el = $("detail");
+  if (!sel) {
+    el.innerHTML = `<h2>How to read this</h2>
+      <p class="hint">Rings run from policy (centre) to detail (edge). Every import should point <b>inward</b>; red arrows break the Dependency Rule.</p>
+      <p class="hint">Click a component to see its metrics and neighbours, a finding to light up what it touches, or a principle chip to filter.</p>
+      ${H ? `<p class="hint">Tick <b>co-change</b> to draw what git history says changes together. A thick purple line with no import beside it is hidden coupling.</p>` : ""}`;
+    return;
+  }
+  if (sel.type === "comp") {
+    const c = byId[sel.id];
+    const co = H ? H.cochange.filter((p) => p.a === c.id || p.b === c.id).sort((a, b) => b.n - a.n).slice(0, 6) : [];
+    const fs = findings.filter((fd) => fd.components.includes(c.id));
+    el.innerHTML = `<h2>${RINGS[c.ring]}</h2><h3>${esc(c.name)}</h3>
+      <div class="mono hint">${c.paths.map(esc).join("<br>")}</div>
+      <dl><dt>fan-in</dt><dd>${c.fanIn}</dd><dt>fan-out</dt><dd>${c.fanOut}</dd>
+        <dt>instability I</dt><dd>${fmt(c.I)}</dd><dt>abstractness A</dt><dd>${fmt(c.A)} (${c.abstract}/${c.total})</dd>
+        <dt>distance D</dt><dd>${fmt(c.D)}</dd>${H ? `<dt>churn</dt><dd>${churn(c.id)} commits</dd>` : ""}</dl>
+      <h2>Depends on</h2><ul>${[...out[c.id]].map((id) => {
+        const e = edges.find((x) => x.from === c.id && x.to === id);
+        return `<li>${linkComp(id)}${e.outward ? ' <span class="badge strong">outward</span>' : ""}${e.cycle ? ' <span class="badge worth">cycle</span>' : ""}</li>`;
+      }).join("") || "<li class=hint>nothing</li>"}</ul>
+      <h2>Depended on by</h2><ul>${[...inn[c.id]].map((id) => `<li>${linkComp(id)}</li>`).join("") || "<li class=hint>nothing</li>"}</ul>
+      ${co.length ? `<h2>Changes with</h2><ul>${co.map((p) => {
+        const o = p.a === c.id ? p.b : p.a;
+        return `<li>${linkComp(o)} · ${p.n}×${linked(c.id, o) ? "" : ' <span class="badge worth">no import</span>'}</li>`;
+      }).join("")}</ul>` : ""}
+      <h2>Findings</h2><ul>${fs.map(findingRow).join("") || "<li class=hint>clean</li>"}</ul>`;
+    return;
+  }
+  if (sel.type === "principle") {
+    const [grp, name, rule] = PRINCIPLES[sel.id];
+    const fs = findings.filter((fd) => fd.principle === sel.id);
+    el.innerHTML = `<h2>${grp} · ${sel.id}</h2><h3>${name}</h3><p>${rule}</p>
+      <h2>Findings</h2><ul>${fs.map(findingRow).join("") || "<li class=hint>checked, clean</li>"}</ul>`;
+    return;
+  }
+  const fd = fById[sel.id];
+  const [grp, name, rule] = PRINCIPLES[fd.principle];
+  el.innerHTML = `<h2>${grp} · ${name}</h2><h3>${esc(fd.title)}</h3>
+    <div class="row"><span class="badge ${fd.strength}">${fd.strength}</span>${fd.measured ? '<span class="badge measured">measured</span>' : ""}</div>
+    <p class="hint"><i>${rule}</i></p>
+    <p><b>Problem.</b> ${esc(fd.problem)}</p><p><b>Fix.</b> ${esc(fd.fix)}</p>
+    ${fd.before || fd.after ? `<div class="ba"><div><span>before</span><pre>${esc(fd.before)}</pre></div><div><span>after</span><pre>${esc(fd.after)}</pre></div></div>` : ""}
+    ${fd.files?.length ? `<h2 style="margin-top:12px">Files</h2><div class="mono">${fd.files.map(esc).join("<br>")}</div>` : ""}
+    <h2 style="margin-top:12px">Components</h2><ul>${fd.components.map((id) => `<li>${linkComp(id)}</li>`).join("")}</ul>`;
+}
+
+// ---- Scorecard + findings list ----
+function drawScorecard() {
+  const groups = {};
+  Object.entries(PRINCIPLES).forEach(([id, [g]]) => (groups[g] ??= []).push(id));
+  $("scorecard").innerHTML = Object.entries(groups).map(([g, ids]) => `<div class="group"><span>${g}</span>${ids.map((id) => {
+    const fs = findings.filter((f) => f.principle === id);
+    const worst = fs.reduce((w, f) => (RANK[f.strength] > RANK[w] ? f.strength : w), "speculative");
+    const on = sel && sel.type === "principle" && sel.id === id;
+    return `<button class="chip ${fs.length ? worst : "clean"} ${on ? "on" : ""}" data-principle="${id}" title="${PRINCIPLES[id][1]}: ${PRINCIPLES[id][2]}"><b>${id}</b>${fs.length ? " " + fs.length : " ✓"}</button>`;
+  }).join("")}</div>`).join("");
+}
+function drawFindings() {
+  const list = sel && sel.type === "principle" ? findings.filter((f) => f.principle === sel.id)
+    : sel && sel.type === "comp" ? findings.filter((f) => f.components.includes(sel.id)) : findings;
+  $("findingsTitle").textContent = list === findings ? `Findings (${findings.length})` : `Findings (${list.length} of ${findings.length})`;
+  $("findings").innerHTML = list.map((f) => `<article class="panel finding ${sel && sel.type === "finding" && sel.id === f.id ? "on" : ""}" data-finding="${f.id}">
+    <div class="row"><span class="badge ${f.strength}">${f.strength}</span><span class="badge ${f.measured ? "measured" : ""}" style="color:var(--muted)">${f.principle}${f.measured ? " · measured" : ""}</span></div>
+    <h4>${esc(f.title)}</h4><p>${esc(f.problem)}</p></article>`).join("") || `<p class="hint">Nothing here.</p>`;
+}
+
+function render() {
+  drawScorecard(); drawRings(); drawSeq(); drawDetail(); drawFindings();
+}
+
+// ---- Events ----
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-id],[data-comp],[data-finding],[data-principle],[data-view]");
+  if (!t) return;
+  if (t.dataset.view) {
+    view = t.dataset.view;
+    document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b === t));
+    $("rings").style.display = view === "rings" ? "" : "none";
+    $("seq").style.display = view === "seq" ? "" : "none";
+    $("layers").style.visibility = view === "rings" ? "" : "hidden";
+    render();
+  } else if (t.dataset.id || t.dataset.comp) select({ type: "comp", id: t.dataset.id || t.dataset.comp });
+  else if (t.dataset.finding) select({ type: "finding", id: t.dataset.finding });
+  else if (t.dataset.principle) select({ type: "principle", id: t.dataset.principle });
+});
+document.addEventListener("keydown", (e) => e.key === "Escape" && select(null));
+["showImports", "showCo", "sizeChurn"].forEach((id) => $(id).addEventListener("change", render));
+$("coMin").addEventListener("input", () => { $("coMinVal").textContent = $("coMin").value; $("showCo").checked = true; render(); });
+
+render();
+</script>
+</body>
+</html>

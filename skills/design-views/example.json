@@ -1,0 +1,113 @@
+{
+  "repo": "shop",
+  "views": ["logical", "physical", "application", "rings", "class"],
+  "actors": [
+    { "id": "customer", "name": "Customer", "kind": "human" },
+    { "id": "clerk", "name": "Clerk", "kind": "human" },
+    { "id": "stripe", "name": "Stripe", "kind": "system" },
+    { "id": "web", "name": "Web UI", "kind": "system" }
+  ],
+  "logical": {
+    "boxes": [
+      { "id": "browse", "name": "Browse catalog", "actors": ["customer", "web"], "paths": ["src/catalog"] },
+      { "id": "place", "name": "Place order", "actors": ["customer", "web"], "paths": ["src/orders/place"] },
+      { "id": "pay", "name": "Take payment", "actors": ["stripe"], "paths": ["src/payments"] },
+      { "id": "refund", "name": "Refund", "actors": ["clerk", "web"], "paths": ["src/orders/refund"] }
+    ],
+    "edges": [
+      { "from": "browse", "to": "place", "label": "cart" },
+      { "from": "place", "to": "pay", "label": "charge" },
+      { "from": "refund", "to": "pay", "label": "reverse" }
+    ]
+  },
+  "physical": {
+    "units": [
+      { "id": "server", "name": "API process", "kind": "process", "paths": ["src/main.ts"] },
+      { "id": "web-bundle", "name": "Browser bundle", "kind": "package", "paths": ["src/web"] },
+      { "id": "src", "name": "src/", "kind": "folder", "paths": ["src"] }
+    ],
+    "edges": [
+      { "from": "src", "to": "server", "label": "contains" },
+      { "from": "src", "to": "web-bundle", "label": "contains" },
+      { "from": "web-bundle", "to": "server", "label": "HTTP" }
+    ]
+  },
+  "application": {
+    "modules": [
+      { "id": "order", "name": "Order", "paths": ["src/orders/domain"] },
+      { "id": "place-order", "name": "Place order", "paths": ["src/orders/place"] },
+      { "id": "refund", "name": "Refund", "paths": ["src/orders/refund"] },
+      { "id": "payments", "name": "Payments", "paths": ["src/payments"] },
+      { "id": "http", "name": "HTTP", "paths": ["src/http"] },
+      { "id": "db", "name": "Postgres", "paths": ["src/db"] }
+    ],
+    "edges": [
+      { "from": "place-order", "to": "order" },
+      { "from": "place-order", "to": "payments" },
+      { "from": "place-order", "to": "db", "note": "imports Pool directly" },
+      { "from": "refund", "to": "order" },
+      { "from": "refund", "to": "payments" },
+      { "from": "refund", "to": "place-order" },
+      { "from": "place-order", "to": "refund" },
+      { "from": "http", "to": "place-order" },
+      { "from": "http", "to": "refund" },
+      { "from": "payments", "to": "db" }
+    ]
+  },
+  "rings": {
+    "components": [
+      { "id": "order", "name": "Order", "ring": 0, "paths": ["src/orders/domain"] },
+      { "id": "place-order", "name": "Place order", "ring": 1, "paths": ["src/orders/place"] },
+      { "id": "refund", "name": "Refund", "ring": 1, "paths": ["src/orders/refund"] },
+      { "id": "http", "name": "HTTP", "ring": 2, "paths": ["src/http"] },
+      { "id": "db", "name": "Postgres", "ring": 3, "paths": ["src/db"] }
+    ],
+    "edges": [
+      { "from": "place-order", "to": "order" },
+      { "from": "refund", "to": "order" },
+      { "from": "http", "to": "place-order" },
+      { "from": "http", "to": "refund" },
+      { "from": "place-order", "to": "db", "note": "imports Pool directly" }
+    ]
+  },
+  "class": {
+    "mermaid": "classDiagram\n  class Order {\n    +id: string\n    +total: Money\n  }\n  class OrderStore {\n    <<interface>>\n    +save(Order)\n  }\n  class PgOrderStore {\n    +save(Order)\n  }\n  OrderStore <|.. PgOrderStore\n  PlaceOrder --> OrderStore\n  PlaceOrder --> Order\n  Refund --> Order"
+  },
+  "findings": [
+    {
+      "id": "f1",
+      "view": "logical",
+      "principle": "FLOW",
+      "title": "Refund and place share no settle box",
+      "strength": "worth",
+      "boxes": ["place", "refund"],
+      "files": ["src/orders/refund/refund.ts:1"],
+      "problem": "Clerk refund and customer place both hit pay, but nothing records the outcome for either flow.",
+      "fix": "Add a settle box both edges land on, or give refund its own outcome actor."
+    },
+    {
+      "id": "f2",
+      "view": "application",
+      "principle": "SKIP",
+      "title": "Place order imports Postgres Pool",
+      "strength": "strong",
+      "modules": ["place-order", "db"],
+      "files": ["src/orders/place/placeOrder.ts:4"],
+      "problem": "Place order reaches the leaf driver instead of a store façade.",
+      "fix": "Place order depends on an OrderStore; db implements it.",
+      "before": "import { Pool } from \"pg\";",
+      "after": "export interface OrderStore { save(o: Order): Promise<void> }"
+    },
+    {
+      "id": "f3",
+      "view": "application",
+      "principle": "HAND",
+      "title": "Place↔refund cycle is a ring question",
+      "strength": "worth",
+      "modules": ["place-order", "refund"],
+      "files": ["src/orders/place/placeOrder.ts", "src/orders/refund/refund.ts"],
+      "problem": "The cycle shows up as application mess; whether policy owns the seam is a Clean Architecture call.",
+      "fix": "Run clean-code on these modules for ring placement and DIP."
+    }
+  ]
+}

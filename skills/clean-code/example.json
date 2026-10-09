@@ -1,0 +1,58 @@
+{
+  "repo": "shop",
+  "components": [
+    { "id": "order", "name": "Order", "ring": 0, "paths": ["src/orders/domain"], "abstract": 2, "total": 6 },
+    { "id": "pricing", "name": "Pricing", "ring": 0, "paths": ["src/pricing"], "abstract": 0, "total": 9 },
+    { "id": "place-order", "name": "Place order", "ring": 1, "paths": ["src/orders/place"], "abstract": 1, "total": 3 },
+    { "id": "refund", "name": "Refund", "ring": 1, "paths": ["src/orders/refund"], "abstract": 0, "total": 2 },
+    { "id": "order-repo", "name": "Order repo", "ring": 2, "paths": ["src/orders/repo"], "abstract": 0, "total": 2 },
+    { "id": "http", "name": "HTTP controllers", "ring": 2, "paths": ["src/http"], "abstract": 0, "total": 5 },
+    { "id": "postgres", "name": "Postgres", "ring": 3, "paths": ["src/db"], "abstract": 0, "total": 3 },
+    { "id": "server", "name": "Server main", "ring": 3, "paths": ["src/main.ts"], "abstract": 0, "total": 1 }
+  ],
+  "edges": [
+    { "from": "place-order", "to": "order" },
+    { "from": "place-order", "to": "pricing" },
+    { "from": "place-order", "to": "postgres", "note": "imports pg Pool directly" },
+    { "from": "refund", "to": "order" },
+    { "from": "refund", "to": "place-order" },
+    { "from": "place-order", "to": "refund" },
+    { "from": "order-repo", "to": "order" },
+    { "from": "order-repo", "to": "postgres" },
+    { "from": "http", "to": "place-order" },
+    { "from": "http", "to": "refund" },
+    { "from": "server", "to": "http" },
+    { "from": "server", "to": "order-repo" },
+    { "from": "pricing", "to": "order" }
+  ],
+  "folders": [
+    { "name": "orders", "kind": "business" },
+    { "name": "pricing", "kind": "business" },
+    { "name": "http", "kind": "technical" },
+    { "name": "db", "kind": "technical" }
+  ],
+  "findings": [
+    {
+      "id": "f1",
+      "principle": "DIP",
+      "title": "Place order owns no repository interface",
+      "strength": "strong",
+      "components": ["place-order", "postgres"],
+      "files": ["src/orders/place/placeOrder.ts:4"],
+      "problem": "The use case builds its own pg Pool, so policy depends on a detail.",
+      "fix": "Place order declares an OrderStore interface; Order repo implements it.",
+      "before": "import { Pool } from \"pg\";\nconst db = new Pool();",
+      "after": "export interface OrderStore { save(o: Order): Promise<void> }\nexport function placeOrder(store: OrderStore) { … }"
+    },
+    {
+      "id": "f2",
+      "principle": "OCP",
+      "title": "Discount ladder edited by every promo",
+      "strength": "worth",
+      "components": ["pricing"],
+      "files": ["src/pricing/discount.ts:12-80"],
+      "problem": "A 14-arm switch on promo kind; 9 of the last 20 commits edit it.",
+      "fix": "One Discount rule per promo, registered in a list."
+    }
+  ]
+}
