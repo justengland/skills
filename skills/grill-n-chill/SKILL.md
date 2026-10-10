@@ -23,8 +23,8 @@ Based on `grilling` and `grill-with-docs` from mattpocock/skills. Same relentles
    node <skill-dir>/scripts/gnc.mjs start --title "Short topic title"
    ```
 
-   It prints a URL (default `http://localhost:4711`). Tell the user to open it. State lives in `.grill-n-chill/` in the project root; add it to `.gitignore` if the repo is tracked.
-3. If the browser cannot reach the machine running you (remote sandbox), add `--host 0.0.0.0` and tell the user the URL needs forwarding. If that is not possible, fall back to plain chat questions, same rules.
+   It prints the URLs (default `http://localhost:4711`). If Tailscale is running, it also listens on the tailnet IP and prints the MagicDNS and IP URLs first: give the user the MagicDNS URL. Otherwise give the localhost one. State lives in `.grill-n-chill/` in the project root; add it to `.gitignore` if the repo is tracked.
+3. If the browser cannot reach the machine running you (remote sandbox, no Tailscale), add `--host 0.0.0.0` and tell the user the URL needs forwarding. If that is not possible, fall back to plain chat questions, same rules.
 
 ## The loop
 

@@ -3,7 +3,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -89,7 +89,7 @@ function serve() {
     return lines.join('\n');
   }
 
-  const srv = http.createServer(async (req, res) => {
+  const handler = async (req, res) => {
     const url = new URL(req.url, 'http://x');
     const p = url.pathname;
     try {
@@ -189,12 +189,24 @@ function serve() {
     } catch (e) {
       send(res, 500, { error: String(e.message || e) });
     }
-  });
+  };
 
+  // On a tailnet, also listen on the tailscale IP so the browser can reach a remote agent.
+  const ts = host === '127.0.0.1' ? tailnet() : null;
+  const srv = http.createServer(handler);
   srv.listen(port, host, () => {
-    fs.writeFileSync(serverFile, JSON.stringify({ port, host, pid: process.pid }));
+    if (ts) http.createServer(handler).listen(port, ts.ip).on('error', () => {});
+    fs.writeFileSync(serverFile, JSON.stringify({ port, host, pid: process.pid, ts }));
   });
   srv.on('error', (e) => die('server error: ' + e.message));
+}
+
+function tailnet() {
+  try {
+    const s = JSON.parse(execFileSync('tailscale', ['status', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }));
+    const ip = s.BackendState === 'Running' && s.Self.TailscaleIPs.find((a) => a.includes('.'));
+    return ip ? { ip, name: s.Self.DNSName.replace(/\.$/, '') } : null;
+  } catch { return null; }
 }
 
 /* ------------------------------- client ------------------------------ */
@@ -247,7 +259,9 @@ async function main() {
       if (!(await alive())) die('Server failed to start (is the port in use? try --port).');
     }
     const s = JSON.parse(fs.readFileSync(serverFile, 'utf8'));
-    return out(`Grill-n-Chill is up: http://localhost:${s.port}  (state in ${dataDir})`);
+    const urls = [`http://localhost:${s.port}`];
+    if (s.ts) urls.unshift(`http://${s.ts.name}:${s.port}`, `http://${s.ts.ip}:${s.port}`);
+    return out(`Grill-n-Chill is up: ${urls.join('  ')}  (state in ${dataDir})`);
   }
 
   if (cmd === 'ask') {
