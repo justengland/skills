@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grill-n-Chill</title>
+<style>
+  :root{
+    --bg:#f6f1ea; --ink:#2a2420; --muted:#7a6f66; --card:#fffdf9; --line:#e4dacd;
+    --accent:#d9480f; --accent-ink:#fff; --ok:#2f7d4f; --stale:#a89b8d; --sel:#fff1e8;
+    --shadow:0 18px 40px -18px rgba(60,35,10,.35);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#1b1714; --ink:#f1e9df; --muted:#a39688; --card:#26211d; --line:#3a332c;
+      --accent:#ff7a3d; --accent-ink:#1b1714; --ok:#57c283; --stale:#6d6359; --sel:#3a2a20;
+      --shadow:0 18px 40px -18px rgba(0,0,0,.7);}
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font:16px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    display:flex;flex-direction:column;align-items:center;padding:0 16px 32px}
+  header{width:100%;max-width:680px;padding:20px 0 8px;display:flex;align-items:baseline;gap:12px;justify-content:space-between}
+  header h1{font-size:15px;margin:0;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  header .title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #timeline{width:100%;max-width:680px;display:flex;gap:6px;flex-wrap:wrap;padding:6px 0 14px}
+  .dot{min-width:30px;height:30px;border-radius:15px;border:1.5px solid var(--line);background:transparent;color:var(--muted);
+    font:600 12px/1 inherit;cursor:pointer;padding:0 8px;position:relative}
+  .dot.answered{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+  .dot.current{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+  .dot.answered.current{background:var(--accent);color:var(--accent-ink)}
+  .dot.stale{border-style:dashed;background:transparent;color:var(--stale);border-color:var(--stale);text-decoration:line-through}
+  .dot.revised::after{content:"";position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:4px;background:var(--accent);border:2px solid var(--bg)}
+  .dot.wait{border-style:dotted;animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+  #stage{width:100%;max-width:680px;perspective:1600px;flex:1}
+  .card{position:relative;transition:transform .55s cubic-bezier(.3,.8,.3,1);transform-style:preserve-3d;min-height:420px}
+  .card.flipped{transform:rotateY(180deg)}
+  .face{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:26px 26px 22px;
+    backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;gap:14px;min-height:420px}
+  .back{position:absolute;inset:0;transform:rotateY(180deg);overflow:auto}
+  .enter{animation:slide .35s ease both}
+  @keyframes slide{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+  .eyebrow{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .badge{border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11px;letter-spacing:.04em}
+  .badge.warn{border-color:var(--accent);color:var(--accent)}
+  .q{font-size:22px;line-height:1.3;font-weight:700;margin:0}
+  .ctx{background:color-mix(in srgb,var(--ink) 5%,transparent);border-left:3px solid var(--line);padding:10px 12px;border-radius:6px;font-size:14px;color:var(--muted);white-space:pre-wrap}
+  code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:color-mix(in srgb,var(--ink) 9%,transparent);padding:1px 5px;border-radius:4px}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;background:transparent;color:inherit;font:inherit;
+    border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:.12s}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{background:var(--sel);border-color:var(--accent)}
+  .key{flex:none;width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:13px;text-transform:uppercase}
+  .opt.sel .key{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .opt small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .rec{margin-left:auto;font-size:11px;color:var(--ok);font-weight:700}
+  .tf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tf .opt{justify-content:center;font-size:20px;font-weight:700;padding:22px 10px;align-items:center}
+  textarea,input[type=text]{width:100%;font:inherit;color:inherit;background:transparent;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;resize:vertical}
+  textarea{min-height:150px}
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:10px;align-items:center;margin-top:auto;flex-wrap:wrap}
+  .row .sp{flex:1}
+  button.btn{font:600 15px inherit;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:inherit;padding:10px 16px;cursor:pointer}
+  button.btn:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  button.primary:disabled{opacity:.35;cursor:not-allowed}
+  button.link{background:none;border:none;color:var(--muted);font:inherit;font-size:14px;cursor:pointer;text-decoration:underline;padding:6px 4px}
+  .note summary{cursor:pointer;color:var(--muted);font-size:14px}
+  .note input{margin-top:8px}
+  .rec-box{border:1.5px dashed var(--ok);border-radius:14px;padding:14px;font-size:18px;font-weight:600}
+  .why{color:var(--muted);font-size:15px;white-space:pre-wrap}
+  .center{text-align:center;display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:10px;color:var(--muted)}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hist{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;pointer-events:none;font-size:14px}
+  #toast.show{opacity:1;transform:translateX(-50%)}
+  .kbd{color:var(--muted);font-size:12px;margin-top:10px;text-align:center;width:100%;max-width:680px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header><h1>Grill-n-Chill</h1><div class="title" id="title"></div></header>
+<div id="timeline"></div>
+<main id="stage"></main>
+<div class="kbd" id="kbd">a/b/c pick &middot; t/f true/false &middot; Enter lock in &middot; r peek at Claude's take &middot; &larr; &rarr; history</div>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let S = { cards: [], answers: {}, status: 'open', title: '' };
+let view = 0;              // index into S.cards (== cards.length means the waiting slot)
+let flipped = false;
+let animate = true;
+const drafts = {};         // cardId -> {value, text, note}
+let lastVersion = -1;
+let followFrontier = true; // auto-advance when user sits on the newest slot
+
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const frontier = () => { const i = S.cards.findIndex((c) => !S.answers[c.id]); return i < 0 ? S.cards.length : i; };
+
+async function poll() {
+  try {
+    const r = await fetch('/api/state', { cache: 'no-store' });
+    const n = await r.json();
+    if (n.version !== lastVersion) {
+      const hadFront = frontier();
+      S = n; lastVersion = n.version;
+      if (followFrontier || view > S.cards.length) view = Math.min(view < hadFront ? view : frontier(), S.cards.length);
+      if (followFrontier) view = frontier();
+      render();
+    }
+  } catch {}
+}
+
+function dotsHtml() {
+  const f = frontier();
+  let h = S.cards.map((c, i) => {
+    const a = S.answers[c.id];
+    const cls = ['dot', a ? 'answered' : '', i === view ? 'current' : '', c.stale ? 'stale' : '', a?.history?.length ? 'revised' : ''].join(' ');
+    return `<button class="${cls}" data-go="${i}" title="${esc(c.question)}">${i + 1}</button>`;
+  }).join('');
+  if (S.status !== 'done') h += `<button class="dot wait ${view === S.cards.length ? 'current' : ''}" data-go="${S.cards.length}" title="Next question">…</button>`;
+  return h;
+}
+
+function render() {
+  $('#title').textContent = S.title || '';
+  $('#timeline').innerHTML = dotsHtml();
+  document.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => go(Number(b.dataset.go)));
+  const stage = $('#stage');
+  const card = S.cards[view];
+  if (!card) {
+    flipped = false;
+    stage.innerHTML = S.status === 'done'
+      ? `<div class="face enter"><div class="center"><div style="font-size:42px">🎉</div><h2 style="margin:0;color:var(--ink)">Shared understanding reached</h2>
+         <p>Claude has what it needs. Review or change any answer from the timeline above.</p>
+         <a href="/api/export" target="_blank">Open the Q&amp;A transcript</a></div></div>`
+      : `<div class="face enter"><div class="center"><div class="spinner"></div><div>Claude is thinking up the next question…</div></div></div>`;
+    return;
+  }
+  const a = S.answers[card.id];
+  const d = drafts[card.id] || (drafts[card.id] = a ? { value: a.value, text: a.text || '', note: a.note || '' } : { value: card.type === 'essay' ? '' : null, text: '', note: '' });
+  const answered = !!a;
+  const dirty = answered && (JSON.stringify(d.value) !== JSON.stringify(a.value) || (d.text || '') !== (a.text || '') || (d.note || '') !== (a.note || ''));
+  const hasValue = card.type === 'essay' ? String(d.value || '').trim().length > 0
+    : Array.isArray(d.value) ? d.value.length > 0
+    : d.value === 'other' ? String(d.text || '').trim().length > 0 : !!d.value;
+
+  let body = '';
+  if (card.type === 'mc') {
+    const multi = !!card.multi;
+    const rec = Array.isArray(card.recommended) ? card.recommended : [card.recommended];
+    const sel = (k) => Array.isArray(d.value) ? d.value.includes(k) : d.value === k;
+    body = '<div class="opts">' + (card.options || []).map((o) =>
+      `<button class="opt ${sel(o.key) ? 'sel' : ''}" data-key="${esc(o.key)}"><span class="key">${esc(o.key)}</span><span><b>${fmt(o.label)}</b>${o.detail ? `<small>${fmt(o.detail)}</small>` : ''}</span></button>`).join('')
+      + `<button class="opt ${d.value === 'other' ? 'sel' : ''}" data-key="other"><span class="key">…</span><span><b>Other</b></span></button></div>`
+      + (d.value === 'other' ? `<input type="text" id="other" placeholder="Your answer" value="${esc(d.text)}">` : '')
+      + (multi ? '<div class="why">Select all that apply.</div>' : '');
+  } else if (card.type === 'tf') {
+    body = `<div class="tf"><button class="opt ${d.value === 'true' ? 'sel' : ''}" data-key="true">True</button><button class="opt ${d.value === 'false' ? 'sel' : ''}" data-key="false">False</button></div>`;
+  } else {
+    body = `<textarea id="essay" placeholder="Type your answer…">${esc(d.value)}</textarea>`;
+  }
+
+  const hist = a?.history?.length
+    ? `<div class="hist">Earlier answers: ${a.history.map((h) => esc(Array.isArray(h.value) ? h.value.join(', ') : (h.text || h.value))).join(' → ')} → <b>current</b></div>` : '';
+  const recText = recommendedText(card);
+
+  stage.innerHTML = `
+  <div class="card ${flipped ? 'flipped' : ''} ${animate ? 'enter' : ''}" id="card">
+    <div class="face front">
+      <div class="eyebrow"><span>${esc(card.topic || 'Question')} · ${view + 1}/${S.cards.length}</span>
+        <span>${card.stale ? '<span class="badge warn">withdrawn</span>' : answered ? '<span class="badge">answered</span>' : ''}</span></div>
+      <h2 class="q">${fmt(card.question)}</h2>
+      ${card.context ? `<div class="ctx">${fmt(card.context)}</div>` : ''}
+      ${body}
+      <details class="note" ${d.note ? 'open' : ''}><summary>Add a note</summary><input type="text" id="note" placeholder="Anything Claude should know…" value="${esc(d.note)}"></details>
+      ${hist}
+      <div class="row">
+        <button class="btn" id="prev" ${view === 0 ? 'disabled' : ''}>← Back</button>
+        <button class="btn" id="flip">Peek at Claude's take</button>
+        ${card.type !== 'essay' ? '<button class="link" id="unsure">Not sure, your call</button>' : ''}
+        <span class="sp"></span>
+        <button class="btn primary" id="submit" ${(!hasValue || (answered && !dirty)) ? 'disabled' : ''}>${answered ? 'Update answer' : 'Lock it in'}</button>
+      </div>
+    </div>
+    <div class="face back">
+      <div class="eyebrow"><span>Claude's recommendation</span><span></span></div>
+      ${recText ? `<div class="rec-box">${fmt(recText)}</div>` : '<div class="why">No recommendation on this one. It is genuinely your call.</div>'}
+      ${card.why ? `<div class="why">${fmt(card.why)}</div>` : ''}
+      <div class="row"><button class="btn" id="unflip">← Back to card</button><span class="sp"></span>
+        ${recText && card.type !== 'essay' || (card.type === 'essay' && card.recommended) ? '<button class="btn primary" id="useRec">Use this answer</button>' : ''}</div>
+    </div>
+  </div>`;
+  animate = false;
+  wire(card, d, a);
+}
+
+function recommendedText(card) {
+  const r = card.recommended;
+  if (r === undefined || r === null || r === '') return '';
+  if (card.type === 'tf') return String(r) === 'true' ? 'True' : 'False';
+  if (card.type === 'mc') {
+    return (Array.isArray(r) ? r : [r]).map((k) => { const o = (card.options || []).find((o) => o.key === k); return o ? `${k.toUpperCase()}: ${o.label}` : k; }).join('\n');
+  }
+  return String(r);
+}
+
+function wire(card, d, a) {
+  const $c = (s) => $('#card').querySelector(s);
+  const refresh = () => { const keep = flipped; render(); };
+  document.querySelectorAll('.opt[data-key]').forEach((b) => b.onclick = () => pick(card, d, b.dataset.key));
+  $c('#prev').onclick = () => go(view - 1);
+  $c('#flip').onclick = () => setFlip(true);
+  $c('#unflip').onclick = () => setFlip(false);
+  const un = $c('#unsure'); if (un) un.onclick = () => { d.value = 'unsure'; d.text = ''; submit(card, d); };
+  const ur = $c('#useRec'); if (ur) ur.onclick = () => useRec(card, d);
+  $c('#submit').onclick = () => submit(card, d);
+  const es = $c('#essay'); if (es) { es.oninput = () => { d.value = es.value; $c('#submit').disabled = !es.value.trim() || (!!a && !dirtyNow(d, a)); }; setTimeout(() => !flipped && es.focus(), 60); }
+  const ot = $c('#other'); if (ot) { ot.oninput = () => { d.text = ot.value; $c('#submit').disabled = !ot.value.trim(); }; setTimeout(() => ot.focus(), 30); }
+  const nt = $c('#note'); if (nt) nt.oninput = () => { d.note = nt.value; if (a) $c('#submit').disabled = !dirtyNow(d, a); };
+}
+const dirtyNow = (d, a) => JSON.stringify(d.value) !== JSON.stringify(a.value) || (d.text || '') !== (a.text || '') || (d.note || '') !== (a.note || '');
+
+function pick(card, d, key) {
+  if (card.type === 'mc' && card.multi && key !== 'other') {
+    const cur = Array.isArray(d.value) ? d.value : [];
+    d.value = cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
+  } else d.value = key;
+  if (key !== 'other') d.text = '';
+  render();
+}
+function useRec(card, d) {
+  const r = card.recommended;
+  d.value = card.type === 'tf' ? String(r) : card.type === 'essay' ? String(r) : (card.multi ? (Array.isArray(r) ? r : [r]) : (Array.isArray(r) ? r[0] : r));
+  flipped = false; render();
+}
+function setFlip(v) { flipped = v; document.getElementById('card').classList.toggle('flipped', v); }
+
+async function submit(card, d) {
+  const had = !!S.answers[card.id];
+  const body = { cardId: card.id, value: d.value, text: d.value === 'other' ? d.text : undefined, note: d.note || undefined };
+  const r = await fetch('/api/answer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) return toast('Could not save that answer');
+  const before = JSON.stringify(S.answers[card.id]?.value);
+  await refetch();
+  const changed = had && before !== JSON.stringify(S.answers[card.id]?.value);
+  flipped = false; animate = true;
+  if (had) {
+    toast(changed ? 'Answer updated. Claude will be told.' : 'Saved.');
+    view = frontier() === S.cards.length || view >= frontier() ? frontier() : view;
+    followFrontier = true; view = frontier();
+  } else { followFrontier = true; view = frontier(); }
+  render();
+}
+async function refetch() { const r = await fetch('/api/state', { cache: 'no-store' }); S = await r.json(); lastVersion = S.version; }
+
+function go(i) {
+  i = Math.max(0, Math.min(i, S.cards.length));
+  view = i; flipped = false; animate = true;
+  followFrontier = i === frontier();
+  render();
+}
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement?.tagName);
+  const card = S.cards[view];
+  if (e.key === 'Enter' && (!typing || e.shiftKey === false && document.activeElement.tagName === 'INPUT')) {
+    const b = document.getElementById('submit'); if (b && !b.disabled) { e.preventDefault(); b.click(); } return;
+  }
+  if (typing) return;
+  if (e.key === 'ArrowLeft') return go(view - 1);
+  if (e.key === 'ArrowRight') return go(view + 1);
+  if (!card) return;
+  const k = e.key.toLowerCase();
+  if (k === 'r') return setFlip(!flipped);
+  if (card.type === 'tf' && (k === 't' || k === 'f')) return pick(card, drafts[card.id], k === 't' ? 'true' : 'false');
+  if (card.type === 'mc') {
+    const o = (card.options || []).find((o) => o.key.toLowerCase() === k);
+    if (o) return pick(card, drafts[card.id], o.key);
+    if (k === 'o') return pick(card, drafts[card.id], 'other');
+  }
+});
+
+poll(); setInterval(poll, 1200);
+</script>
+</body>
+</html>
